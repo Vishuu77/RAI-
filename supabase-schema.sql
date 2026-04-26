@@ -1,156 +1,90 @@
-# RAI PORTAL — Deployment Guide
-## VTU 2022 Scheme · Robotics & AI Department Portal
+-- ============================================================
+--  RAI PORTAL — SUPABASE DATABASE SCHEMA
+--  Run this in: Supabase Dashboard → SQL Editor → New Query
+-- ============================================================
 
----
+-- 1. USER PROFILES (auto-created after signup)
+CREATE TABLE IF NOT EXISTS profiles (
+  id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  name        TEXT,
+  email       TEXT,
+  usn         TEXT,
+  semester    INT,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
 
-## WHAT YOU HAVE
-A complete production-ready web app with:
-- ✅ Full VTU 2022 RAI syllabus (all 8 semesters, every subject + elective)
-- ✅ Textbook library (22 prescribed books with filter)
-- ✅ Notes section (16 subject note cards)
-- ✅ RAI Tutor (Claude AI-powered academic assistant)
-- ✅ SkillUp (6 courses, lesson player, final exam, downloadable certificate)
-- ✅ User authentication (sign up / sign in)
-- ✅ Google Drive integration hooks
-- ✅ Supabase backend (enrollments, results, chat logs)
+-- Auto-create profile on signup
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, name, email)
+  VALUES (
+    NEW.id,
+    NEW.raw_user_meta_data->>'name',
+    NEW.email
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
----
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
-## STEP 1 — Set Up Supabase (Free Database + Auth)
+-- 2. COURSE ENROLLMENTS
+CREATE TABLE IF NOT EXISTS enrollments (
+  id          BIGSERIAL PRIMARY KEY,
+  user_id     UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  course_id   INT NOT NULL,
+  progress    INT DEFAULT 0,
+  enrolled_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, course_id)
+);
 
-1. Go to **https://app.supabase.com** → click **New Project**
-2. Name it `rai-portal`, choose a password, pick any region → **Create Project**
-3. Wait ~2 minutes for setup
-4. Go to **SQL Editor** → click **New Query**
-5. Paste the contents of **`supabase-schema.sql`** → click **Run**
-6. Go to **Settings → API**
-7. Copy your **Project URL** (looks like `https://xxxx.supabase.co`)
-8. Copy your **anon public** key (long string starting with `eyJ...`)
+-- 3. EXAM RESULTS
+CREATE TABLE IF NOT EXISTS exam_results (
+  id         BIGSERIAL PRIMARY KEY,
+  user_id    UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  course_id  INT NOT NULL,
+  score      INT NOT NULL,
+  passed     BOOLEAN DEFAULT FALSE,
+  taken_at   TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, course_id)
+);
 
----
+-- 4. CHAT LOGS (optional — for analytics)
+CREATE TABLE IF NOT EXISTS chat_logs (
+  id         BIGSERIAL PRIMARY KEY,
+  user_id    UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  question   TEXT,
+  answer     TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-## STEP 2 — Add Your API Keys
+-- 5. ROW LEVEL SECURITY
+ALTER TABLE profiles      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE enrollments   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE exam_results  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE chat_logs     ENABLE ROW LEVEL SECURITY;
 
-Open `src/lib/supabase.js` and replace the top 3 lines:
+-- Profiles: users can only read/update their own
+CREATE POLICY "Own profile" ON profiles
+  USING (auth.uid() = id);
 
-```js
-const SUPABASE_URL  = 'https://YOUR-PROJECT-ID.supabase.co';   // ← paste here
-const SUPABASE_ANON = 'eyJhbGciO...YOUR-ANON-KEY';             // ← paste here
-const CLAUDE_KEY    = 'sk-ant-api03-YOUR-ANTHROPIC-KEY';       // ← paste here
-```
+-- Enrollments: users can read/write their own
+CREATE POLICY "Own enrollments" ON enrollments
+  USING (auth.uid() = user_id);
 
-**Get your Claude API key:**
-- Go to **https://console.anthropic.com** → API Keys → Create Key
-- The free tier gives you $5 credit to start
+-- Exam results: users can read/write their own
+CREATE POLICY "Own exam results" ON exam_results
+  USING (auth.uid() = user_id);
 
----
+-- Chat logs: users can insert and read their own
+CREATE POLICY "Own chat logs" ON chat_logs
+  USING (auth.uid() = user_id);
 
-## STEP 3 — Add Your Google Drive PDF Links
-
-For each textbook and note, upload the PDF to Google Drive, then:
-1. Right-click the file → **Share** → **Anyone with the link can view**
-2. Copy the link
-3. Open `src/lib/data.js`
-4. Find the book/note entry and paste the link into `driveUrl: 'YOUR-LINK'`
-
----
-
-## STEP 4 — Deploy to Vercel (Free Hosting)
-
-### Option A — Drag & Drop (Easiest, no account needed initially)
-1. Go to **https://vercel.com** → click **Sign Up** (use GitHub or Google)
-2. Click **Add New → Project**
-3. Click **"Import from your local machine"** or drag the `rai-portal` folder
-4. Click **Deploy**
-5. Your site is live at `https://rai-portal-xxxx.vercel.app` in ~60 seconds!
-
-### Option B — GitHub (Best for updates)
-1. Create a free account at **https://github.com**
-2. Click **+** → **New Repository** → name it `rai-portal` → **Create**
-3. Upload all files from the `rai-portal` folder to GitHub (drag & drop)
-4. Go to **https://vercel.com** → **Add New Project** → **Import from GitHub**
-5. Select your `rai-portal` repo → **Deploy**
-6. Any future change you push to GitHub auto-deploys! ✨
-
----
-
-## STEP 5 — Custom Domain (Optional)
-
-1. In Vercel dashboard → your project → **Settings → Domains**
-2. Add your domain (e.g., `rai.yourcollege.edu`)
-3. Follow the DNS instructions Vercel shows you
-
----
-
-## FILE STRUCTURE
-
-```
-rai-portal/
-├── index.html                  ← Entry point
-├── vercel.json                 ← Hosting config
-├── supabase-schema.sql         ← Run this in Supabase
-├── DEPLOY.md                   ← This guide
-└── src/
-    ├── styles/
-    │   └── main.css            ← All styling
-    ├── lib/
-    │   ├── supabase.js         ← ⚠️ ADD YOUR KEYS HERE
-    │   ├── data.js             ← All syllabus/books/notes data
-    │   └── router.js           ← SPA navigation
-    └── components/
-        ├── Auth.js             ← Sign in / Sign up
-        ├── Syllabus.js         ← 8-semester syllabus
-        ├── Textbooks.js        ← Book library
-        ← Notes.js             ← Study notes
-        ├── Tutor.js            ← AI tutor (Claude)
-        └── SkillUp.js          ← Courses + exam + certificate
-```
-
----
-
-## RUNNING LOCALLY (Optional)
-
-You need a simple HTTP server (because browsers block local JS modules).
-
-**If you have Python installed:**
-```bash
-cd rai-portal
-python -m http.server 3000
-# Open http://localhost:3000
-```
-
-**If you have Node.js installed:**
-```bash
-npx serve rai-portal
-# Open the URL it shows
-```
-
----
-
-## ADDING MORE CONTENT
-
-### Add a textbook:
-In `src/lib/data.js`, add to the `TEXTBOOKS` array:
-```js
-{ id: 23, title: 'Your Book Title', author: 'Author Name', edition: '2024',
-  sem: '5', field: 'Robotics', icon: '📘', color: '#0A1628', driveUrl: 'YOUR-DRIVE-LINK' }
-```
-
-### Add a SkillUp course:
-In `src/lib/data.js`, add to the `COURSES` array with lessons and quiz questions.
-
-### Add study notes:
-In `src/lib/data.js`, add to the `NOTES` array with the Google Drive link.
-
----
-
-## SUPPORT
-
-- Vercel docs: https://vercel.com/docs
-- Supabase docs: https://supabase.com/docs
-- Claude API docs: https://docs.anthropic.com
-- VTU syllabus source: https://vtu.ac.in
-
----
-
-Built for VTU Dept. of Robotics & AI · 2022 Scheme
+-- ============================================================
+--  DONE. Your database is ready!
+--  Next: copy your Supabase URL & anon key into supabase.js
+-- ============================================================

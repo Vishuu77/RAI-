@@ -1,71 +1,75 @@
 // ============================================================
-//  TEXTBOOKS COMPONENT
+//  SYLLABUS COMPONENT
 // ============================================================
 
-const TextbooksComponent = {
-  activeFilter: 'All',
-
+const SyllabusComponent = {
   render() {
-    const fields = ['All', ...new Set(TEXTBOOKS.map(b => b.field))];
+    const stats = [
+      { ico: '📅', num: '8', lbl: 'Semesters' },
+      { ico: '📚', num: '160', lbl: 'Total Credits' },
+      { ico: '🧪', num: '48+', lbl: 'Subjects' },
+      { ico: '🎓', num: '2022', lbl: 'VTU Scheme' }
+    ];
+
     return `
       <div class="section-header">
-        <h2>Prescribed Textbooks</h2>
-        <p>Standard references for all VTU 2022 Scheme R&A subjects — click Download to open from Google Drive</p>
+        <h2>VTU 2022 Scheme — B.E. Robotics & Automation</h2>
+        <p>Complete 8-semester syllabus as per JBOS 10.02.2023/V5 circular · OBE & CBCS · Effective 2023-24</p>
       </div>
-      <div class="filter-row">
-        ${fields.map(f => `
-          <button class="filter-btn ${f === this.activeFilter ? 'active' : ''}"
-            onclick="TextbooksComponent.setFilter('${f}')">${f}</button>`).join('')}
+
+      <div class="grid-4" style="margin-bottom:2rem">
+        ${stats.map(s => `
+          <div class="stat-card">
+            <div class="ico">${s.ico}</div>
+            <div class="num">${s.num}</div>
+            <div class="lbl">${s.lbl}</div>
+          </div>`).join('')}
       </div>
-      <div class="grid-3" id="book-grid">
-        ${this.renderBooks()}
+
+      <div class="grid-2" id="sem-grid">
+        ${SEMESTERS.map((s, i) => this.renderSemCard(s, i)).join('')}
       </div>`;
   },
 
-  renderBooks() {
-    const list = this.activeFilter === 'All'
-      ? TEXTBOOKS
-      : TEXTBOOKS.filter(b => b.field === this.activeFilter);
-    return list.map(b => `
-      <div class="book-card">
-        <div class="book-cover" style="background:${b.color}">${b.icon}</div>
-        <div class="book-body">
-          <div class="book-title">${b.title}</div>
-          <div class="book-author">${b.author}</div>
-          <div class="book-meta">
-            <span class="pill pill-gray">${b.edition}</span>
-            <span class="pill pill-teal">Sem ${b.sem}</span>
-            <span class="pill pill-navy">${b.field}</span>
-          </div>
-          <div class="book-actions">
-            <button class="btn-sm" onclick="TextbooksComponent.preview(${b.id})">Preview</button>
-            <button class="btn-sm primary" onclick="TextbooksComponent.download(${b.id})">⬇ Download</button>
+  renderSemCard(s, i) {
+    return `
+      <div class="sem-card">
+        <div class="sem-header">
+          <div class="sem-badge" style="background:${s.bg};color:${s.color}">${s.num}</div>
+          <div class="sem-info">
+            <h3>${s.label}</h3>
+            <span>${s.note}</span>
           </div>
         </div>
-      </div>`).join('');
+        <ul class="subject-list">
+          ${s.subjects.map(sub => `
+            <li class="subject-item">
+              <span class="sub-code">${sub.code}</span>
+              <span class="sub-name">${sub.name}
+                <span class="pill ${TYPE_COLORS[sub.type] || 'pill-gray'}" style="margin-left:5px;font-size:9px">${sub.type}</span>
+              </span>
+            </li>`).join('')}
+        </ul>
+        ${s.electives.length ? `
+          <button class="elective-toggle" onclick="SyllabusComponent.toggleElectives(${i})">
+            <span>+</span> <span>${s.electives.length} Elective Options</span>
+          </button>
+          <ul class="subject-list elective-list" id="el-${i}">
+            ${s.electives.map(e => `
+              <li class="subject-item">
+                <span class="sub-code" style="min-width:14px">▸</span>
+                <span class="sub-name" style="color:var(--gray-3);font-style:italic">${e}</span>
+              </li>`).join('')}
+          </ul>` : ''}
+      </div>`;
   },
 
-  setFilter(f) {
-    this.activeFilter = f;
-    document.getElementById('book-grid').innerHTML = this.renderBooks();
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.textContent === f);
-    });
-  },
-
-  preview(id) {
-    const b = TEXTBOOKS.find(x => x.id === id);
-    showToast(`Opening preview for "${b.title}"…`);
-    if (b.driveUrl && b.driveUrl !== '#') window.open(b.driveUrl, '_blank');
-    else showToast('Drive link not configured yet — add driveUrl in data.js', 'error');
-  },
-
-  download(id) {
-    const b = TEXTBOOKS.find(x => x.id === id);
-    if (b.driveUrl && b.driveUrl !== '#') {
-      window.open(b.driveUrl, '_blank');
-    } else {
-      showToast('Add your Google Drive PDF link in src/lib/data.js → driveUrl', 'error');
-    }
+  toggleElectives(i) {
+    const el = document.getElementById('el-' + i);
+    const btn = el.previousElementSibling;
+    el.classList.toggle('open');
+    btn.innerHTML = el.classList.contains('open')
+      ? '<span>−</span> <span>Hide Electives</span>'
+      : `<span>+</span> <span>${SEMESTERS[i].electives.length} Elective Options</span>`;
   }
 };

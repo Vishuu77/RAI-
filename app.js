@@ -1,131 +1,135 @@
 // ============================================================
-//  SUPABASE CONFIG
-//  Replace SUPABASE_URL and SUPABASE_ANON_KEY with your values
-//  from: https://app.supabase.com → Project Settings → API
+//  RAI PORTAL — APP BOOTSTRAP
 // ============================================================
 
-const SUPABASE_URL  = 'sb_publishable_MZ6tkZcjKdR1mPAun9BTLA_2_Vs4cK_';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnb3JjeXZjeWJ6ZHNhc21vamhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMTk5NjIsImV4cCI6MjA5Mjc5NTk2Mn0.t8XAC7VN9hwmPVi7b7wrP2QBVXYJDKMIVyQJ104y9gw';
-const CLAUDE_KEY    = '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';
+document.addEventListener('DOMContentLoaded', () => {
 
-// Simple Supabase REST client (no npm needed)
-const sb = {
-  url: SUPABASE_URL,
-  key: SUPABASE_ANON,
+  // ── BUILD SHELL ──────────────────────────────────────────
+  document.getElementById('app').innerHTML = `
 
-  async query(table, options = {}) {
-    try {
-      let url = `${this.url}/rest/v1/${table}`;
-      const params = new URLSearchParams();
-      if (options.select)  params.set('select', options.select);
-      if (options.filter)  Object.entries(options.filter).forEach(([k,v]) => params.set(k, `eq.${v}`));
-      if (options.order)   params.set('order', options.order);
-      if (params.toString()) url += '?' + params;
+    <!-- TOPBAR -->
+    <header id="topbar">
+      <div class="topbar-brand">
+        <div class="dot">🤖</div>
+        <span>RAI Dept Portal</span>
+      </div>
+      <div class="topbar-right" id="topbar-right">
+        <!-- filled by renderTopbar() -->
+      </div>
+    </header>
 
-      const res = await fetch(url, {
-        headers: {
-          'apikey': this.key,
-          'Authorization': `Bearer ${this.key}`,
-          'Content-Type': 'application/json',
-        }
-      });
-      if (!res.ok) return { data: null, error: await res.text() };
-      return { data: await res.json(), error: null };
-    } catch (e) {
-      return { data: null, error: e.message };
-    }
-  },
+    <!-- HERO -->
+    <div id="hero">
+      <div class="hero-inner">
+        <div class="hero-tag">🎓 VTU 2022 Scheme · B.E. Robotics & Automation</div>
+        <h1>Department of Robotics & Artificial Intelligence</h1>
+        <p>Your complete academic hub — syllabus, textbooks, notes, AI tutor, and skill certifications.</p>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="num">8</div><div class="lbl">Semesters</div></div>
+          <div class="hero-stat"><div class="num">48+</div><div class="lbl">Subjects</div></div>
+          <div class="hero-stat"><div class="num">22</div><div class="lbl">Textbooks</div></div>
+          <div class="hero-stat"><div class="num">6</div><div class="lbl">SkillUp Courses</div></div>
+        </div>
+      </div>
+    </div>
 
-  async insert(table, row) {
-    try {
-      const res = await fetch(`${this.url}/rest/v1/${table}`, {
-        method: 'POST',
-        headers: {
-          'apikey': this.key,
-          'Authorization': `Bearer ${this.key}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(row)
-      });
-      if (!res.ok) return { data: null, error: await res.text() };
-      return { data: await res.json(), error: null };
-    } catch (e) {
-      return { data: null, error: e.message };
-    }
-  },
+    <!-- TAB NAV -->
+    <nav id="tab-nav">
+      <button class="tab-btn active" data-tab="syllabus" onclick="Router.go('syllabus')">
+        <span class="tab-icon">📚</span> Syllabus
+      </button>
+      <button class="tab-btn" data-tab="textbooks" onclick="Router.go('textbooks')">
+        <span class="tab-icon">📖</span> Textbooks
+      </button>
+      <button class="tab-btn" data-tab="notes" onclick="Router.go('notes')">
+        <span class="tab-icon">📝</span> Notes
+      </button>
+      <button class="tab-btn" data-tab="tutor" onclick="Router.go('tutor')">
+        <span class="tab-icon">🤖</span> RAI Tutor
+      </button>
+      <button class="tab-btn" data-tab="skillup" onclick="Router.go('skillup')">
+        <span class="tab-icon">🎓</span> SkillUp
+      </button>
+    </nav>
 
-  async upsert(table, row, onConflict) {
-    try {
-      let url = `${this.url}/rest/v1/${table}`;
-      if (onConflict) url += `?on_conflict=${onConflict}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'apikey': this.key,
-          'Authorization': `Bearer ${this.key}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation,resolution=merge-duplicates'
-        },
-        body: JSON.stringify(row)
-      });
-      if (!res.ok) return { data: null, error: await res.text() };
-      return { data: await res.json(), error: null };
-    } catch (e) {
-      return { data: null, error: e.message };
-    }
-  },
+    <!-- MAIN CONTENT -->
+    <main id="main-content"></main>
 
-  // Auth
-  async signUp(email, password, name) {
-    try {
-      const res = await fetch(`${this.url}/auth/v1/signup`, {
-        method: 'POST',
-        headers: { 'apikey': this.key, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, data: { name } })
-      });
-      const d = await res.json();
-      if (d.error) return { user: null, error: d.error.message || d.error };
-      return { user: d.user, error: null };
-    } catch (e) { return { user: null, error: e.message }; }
-  },
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+      <div class="modal-box" id="modal-content"></div>
+    </div>
 
-  async signIn(email, password) {
-    try {
-      const res = await fetch(`${this.url}/auth/v1/token?grant_type=password`, {
-        method: 'POST',
-        headers: { 'apikey': this.key, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const d = await res.json();
-      if (d.error) return { user: null, token: null, error: d.error_description || d.error };
-      return { user: d.user, token: d.access_token, error: null };
-    } catch (e) { return { user: null, token: null, error: e.message }; }
-  },
+    <!-- TOAST -->
+    <div id="toast"></div>
 
-  async signOut() {
-    const token = localStorage.getItem('rai_token');
-    if (!token) return;
-    await fetch(`${this.url}/auth/v1/logout`, {
-      method: 'POST',
-      headers: { 'apikey': this.key, 'Authorization': `Bearer ${token}` }
-    });
+    <!-- FOOTER -->
+    <footer id="footer">
+      <span>RAI Dept Portal</span> · VTU 2022 Scheme · Built with ❤️ for Robotics & AI students
+    </footer>`;
+
+  // ── TOPBAR ───────────────────────────────────────────────
+  renderTopbar();
+
+  // ── ROUTER INIT ──────────────────────────────────────────
+  Router.init();
+  Router.render();
+});
+
+// ── TOPBAR RENDER ─────────────────────────────────────────
+function renderTopbar() {
+  const user = Auth.getUser();
+  const el = document.getElementById('topbar-right');
+  if (!el) return;
+
+  if (user) {
+    const name = user.user_metadata?.name || user.email?.split('@')[0] || 'Student';
+    const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    el.innerHTML = `
+      <div id="user-badge">
+        <div id="user-avatar">${initials}</div>
+        <span>${name}</span>
+      </div>
+      <button onclick="signOut()">Sign Out</button>`;
+  } else {
+    el.innerHTML = `
+      <button onclick="Router.go('auth')">Sign In</button>
+      <button class="primary" onclick="Router.go('auth')">Sign Up Free</button>`;
   }
-};
+}
 
-// Session helpers
-const Auth = {
-  getUser() {
-    try { return JSON.parse(localStorage.getItem('rai_user') || 'null'); } catch { return null; }
-  },
-  getToken() { return localStorage.getItem('rai_token'); },
-  setSession(user, token) {
-    localStorage.setItem('rai_user', JSON.stringify(user));
-    localStorage.setItem('rai_token', token);
-  },
-  clear() {
-    localStorage.removeItem('rai_user');
-    localStorage.removeItem('rai_token');
-  },
-  isLoggedIn() { return !!this.getToken(); }
-};
+// ── SIGN OUT ─────────────────────────────────────────────
+async function signOut() {
+  await sb.signOut();
+  Auth.clear();
+  showToast('Signed out successfully');
+  setTimeout(() => window.location.reload(), 800);
+}
+
+// ── MODAL HELPERS ─────────────────────────────────────────
+function openModal() {
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+// ── TOAST ────────────────────────────────────────────────
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `show ${type}`;
+  setTimeout(() => { t.className = ''; }, 3200);
+}
+
+// ── KEYBOARD SHORTCUTS ───────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});

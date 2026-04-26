@@ -117,7 +117,7 @@ RESPONSE STYLE:
     try {
       let reply = '';
 
-      if (CLAUDE_KEY && CLAUDE_KEY !== 'YOUR_ANTHROPIC_API_KEY_HERE') {
+      if (CLAUDE_KEY && CLAUDE_KEY !== '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') {
         // Real Claude API call
         const res = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',

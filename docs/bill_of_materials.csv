@@ -1,0 +1,11 @@
+﻿ItemNo,Component,Specification,Qty,Subsystem
+1,Johnson High-Torque DC Motor,12V 500RPM 30kg-cm torque,1,Vertical Drill Spindle
+2,Lead-Screw Actuator Assembly,M8 220mm Stainless with Brass Nut,1,Vertical Z-Feed
+3,Raspberry Pi Pico,Dual-core ARM Cortex-M0+ @ 133MHz,1,Real-time Controller
+4,ESP32-CAM,OV2640 Camera with Wi-Fi/BT,1,Visual Telemetry Stream
+5,4WD Geared Motors,12V 150RPM with 130mm AT Wheels,4,Mobile Drivetrain
+6,BTS7960 Motor Driver,43A High-Current H-Bridge,2,Power Drivetrain
+7,HC-SR04+ Ultrasonic Sensors,3.3V-5V Time-of-Flight Sensors,2,Ground Profiling
+8,LiFePO4 Battery Pack,12V 7.2Ah with 20A BMS,1,Main Power Supply
+9,Limit Switches,Micro Roller Lever Endstops,2,Carriage Travel Bounds
+10,Extruded Aluminum 6061-T6,25x25mm Square Tubing with Gussets,1,Structural Chassis

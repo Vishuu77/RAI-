@@ -1,0 +1,21 @@
+﻿{
+  "robot_name": "AgriBot 6-DOF Agricultural Mobile Robot",
+  "grant_program": "Student Research Project Programme (SRPP 2025-26)",
+  "award": "The Institution of Engineers (India) - Karnataka State Centre, 59th Engineers' Day",
+  "designer": "Er. Vishnu Ramachandra (10th VTU Rank, 9.11 CGPA Honours)",
+  "kinematic_degrees_of_freedom": [
+    { "dof": 1, "joint": "Mobile Drivetrain Surge (X-Axis)", "actuator": "4x 12V 150RPM High-Torque Geared DC Motors", "stroke_mm": "Continuous 4WD" },
+    { "dof": 2, "joint": "Mobile Drivetrain Yaw (Steer Theta)", "actuator": "Differential Skidding Drive", "range_deg": "360 continuous" },
+    { "dof": 3, "joint": "Vertical Drill Z-Axis Translation", "actuator": "Johnson High-Torque DC Motor + M8 Stainless Lead-Screw", "stroke_mm": "220 mm" },
+    { "dof": 4, "joint": "Drill Tool Rotation (Spindle)", "actuator": "12V 500RPM Johnson Geared Motor", "speed_rpm": "500 RPM" },
+    { "dof": 5, "joint": "Sapling Carousel Indexing (Pitch/Yaw)", "actuator": "NEMA 17 Stepper Motor with A4988 Driver", "range_deg": "6-slot rotary magazine" },
+    { "dof": 6, "joint": "Soil Compaction Tamping Arm", "actuator": "Linear Solenoid / High-Torque Servo", "stroke_mm": "50 mm" }
+  ],
+  "chassis_dimensions_mm": {
+    "wheelbase": 420.0,
+    "track_width": 380.0,
+    "ground_clearance": 110.0,
+    "total_mass_kg": 14.8
+  },
+  "battery_spec": "12V 7.2Ah LiFePO4 with 20A BMS (4.5 hours continuous field operation)"
+}
